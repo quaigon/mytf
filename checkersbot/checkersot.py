@@ -305,7 +305,7 @@ if __name__ == '__main__':
             resultlist.append(oneMoveList)
 
 
-     pickle.dump(resultlist, open("train.pickle", "wb"))
+    pickle.dump(resultlist, open("train.pickle", "wb"))
 
     rs = pickle.load(open("train.pickle", "rb"))
     print len(resultlist)
