@@ -2,12 +2,13 @@ from copy import deepcopy
 from time import time
 from random import randint
 import itertools
+import pickle
 
 # Global Constants
 MaxUtility = 1e9
 IsPlayerBlack = True
 MaxAllowedTimeInSeconds = 60
-MaxDepth = 4
+MaxDepth = 5
 
 
 class CheckersState:
@@ -93,7 +94,6 @@ class CheckersState:
                 if self.grid[i][j].lower() == player:
                     generateMoves(self.grid, i, j, successors)
         return successors
-
 
 def piecesCount(state):
     # 1 for a normal piece, 1.5 for a king
@@ -282,26 +282,32 @@ if __name__ == '__main__':
 
     nextmove = CheckersState(succe, True, [])
 
-    for i in range(1, 35):
-        oneMoveList = []
 
-        nextmove = generateRandomMove(nextmove.grid, player)
-        player = not player
-        bestmove = iterativeDeepeningAlphaBeta(nextmove, piecesCount)
-        randomMove = generateRandomMove(nextmove.grid, player)
+    for j in range (1, 1000) :
+        nextmove = CheckersState(succe, True, [])
+        for i in range(1, 35):
+            oneMoveList = []
 
-        nextmoveFlat = list(itertools.chain(*nextmove.grid))
-        bestmoveFlat = list(itertools.chain(*bestmove.grid))
-        randomMoveFlat = list(itertools.chain(*randomMove.grid))
+            nextmove = generateRandomMove(nextmove.grid, player)
+            player = not player
+            bestmove = iterativeDeepeningAlphaBeta(nextmove, piecesCount)
+            randomMove = generateRandomMove(nextmove.grid, player)
+
+            nextmoveFlat = list(itertools.chain(*nextmove.grid))
+            bestmoveFlat = list(itertools.chain(*bestmove.grid))
+            randomMoveFlat = list(itertools.chain(*randomMove.grid))
 
 
-        oneMoveList.append(nextmove.grid)
-        oneMoveList.append(bestmove.grid)
-        oneMoveList.append(randomMove.grid)
+            oneMoveList.append(nextmoveFlat)
+            oneMoveList.append(bestmoveFlat)
+            oneMoveList.append(randomMoveFlat)
 
-        resultlist.append(oneMoveList)
-        print i
+            resultlist.append(oneMoveList)
 
+
+     pickle.dump(resultlist, open("train.pickle", "wb"))
+
+    rs = pickle.load(open("train.pickle", "rb"))
     print len(resultlist)
     print "lol"
     #
