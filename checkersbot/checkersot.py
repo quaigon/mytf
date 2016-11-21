@@ -8,7 +8,7 @@ import pickle
 MaxUtility = 1e9
 IsPlayerBlack = True
 MaxAllowedTimeInSeconds = 60
-MaxDepth = 5
+MaxDepth = 4
 
 
 class CheckersState:
@@ -225,7 +225,11 @@ def generateRandomMove(zboard, blackToMove):
 
     movesNo = len(successors)
 
-    rand = randint(0, movesNo -1)
+
+    if movesNo > 1:
+        rand = randint(0, movesNo -1)
+    else:
+        return None
 
     return successors[rand]
 
@@ -283,32 +287,39 @@ if __name__ == '__main__':
     nextmove = CheckersState(succe, True, [])
 
 
-    for j in range (1, 1000) :
-        nextmove = CheckersState(succe, True, [])
-        for i in range(1, 35):
-            oneMoveList = []
+    # for j in range (1, 500) :
+    #     print j
+    #     nextmove = CheckersState(succe, True, [])
+    #     for i in range(1, 35):
+    #         print i
+    #         oneMoveList = []
+    #
+    #         nextmove = generateRandomMove(nextmove.grid, player)
+    #         player = not player
+    #         bestmove = iterativeDeepeningAlphaBeta(nextmove, piecesCount)
+    #         randomMove = generateRandomMove(nextmove.grid, player)
+    #
+    #
+    #         if nextmove is None or bestmove is None or randomMove is None:
+    #             break
+    #
+    #         nextmoveFlat = list(itertools.chain(*nextmove.grid))
+    #         bestmoveFlat = list(itertools.chain(*bestmove.grid))
+    #         randomMoveFlat = list(itertools.chain(*randomMove.grid))
+    #
+    #
+    #         oneMoveList.append(nextmoveFlat)
+    #         oneMoveList.append(bestmoveFlat)
+    #         oneMoveList.append(randomMoveFlat)
+    #
+    #         resultlist.append(oneMoveList)
 
-            nextmove = generateRandomMove(nextmove.grid, player)
-            player = not player
-            bestmove = iterativeDeepeningAlphaBeta(nextmove, piecesCount)
-            randomMove = generateRandomMove(nextmove.grid, player)
 
-            nextmoveFlat = list(itertools.chain(*nextmove.grid))
-            bestmoveFlat = list(itertools.chain(*bestmove.grid))
-            randomMoveFlat = list(itertools.chain(*randomMove.grid))
-
-
-            oneMoveList.append(nextmoveFlat)
-            oneMoveList.append(bestmoveFlat)
-            oneMoveList.append(randomMoveFlat)
-
-            resultlist.append(oneMoveList)
-
-
-    pickle.dump(resultlist, open("train.pickle", "wb"))
+    # pickle.dump(resultlist, open("train.pickle", "wb"))
 
     rs = pickle.load(open("train.pickle", "rb"))
-    print len(resultlist)
+    print rs[0]
+    print len(rs)
     print "lol"
     #
     # print len(succe.grid)
