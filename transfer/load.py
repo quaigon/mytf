@@ -1,6 +1,6 @@
 import pickle
 import theano
-import train
+import mytrain
 import numpy
 
 def writeNdarrayToFile(L, filename):
@@ -14,10 +14,12 @@ def writeNdarrayToFile(L, filename):
 
 def get_model_from_pickle(fn):
     f = open(fn)
-    Ws, bs = pickle.load(f)
+    Ws, bs = pickle.load(open("zmodel.pickle"))
 
-    Ws_s, bs_s = train.get_parameters(Ws=Ws, bs=bs)
-    x, p = train.get_model(Ws_s, bs_s)
+    Wz, bz = pickle.load(open("model.pickle"))
+
+    Ws_s, bs_s = mytrain.get_parameters(Ws=Ws, bs=bs)
+    x, p = mytrain.get_model(Ws_s, bs_s)
 
     predict = theano.function(
         inputs=[x],
@@ -26,7 +28,7 @@ def get_model_from_pickle(fn):
     return predict
 
 def run():
-    func = get_model_from_pickle('model.pickle')
+    func = get_model_from_pickle('zmodel.pickle')
     X = []
 
     chess = [4,  2,  3,  5,  6,  3,  2,  4,
@@ -77,5 +79,5 @@ def run():
 
 
 
-if __name__ == '__main__':
-    run()
+# if __name__ == '__main__':
+    # run()
