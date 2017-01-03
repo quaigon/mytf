@@ -9,7 +9,10 @@ import load
 MaxUtility = 1e9
 IsPlayerBlack = True
 MaxAllowedTimeInSeconds = 60
-MaxDepth = 4
+MaxDepth = 2
+
+func=load.get_model_from_pickle("zmodel50.pickle")
+func2= load.get_model_from_pickle("notransfer.pickle")
 
 
 class CheckersState:
@@ -96,6 +99,7 @@ class CheckersState:
                     generateMoves(self.grid, i, j, successors)
         return successors
 
+
 def piecesCount(state):
     # 1 for a normal piece, 1.5 for a king
     black, white = 0, 0
@@ -109,13 +113,14 @@ def piecesCount(state):
                 white += 1.0
             elif cell == 'W':
                 white += 1.5
-    return black - white if IsPlayerBlack else white - black
+    return white - black if IsPlayerBlack else black - white
+
 
 def iterativeDeepeningAlphaBeta(state, evaluationFunc):
     startTime = time()
 
     def alphaBetaSearch(state, alpha, beta, depth):
-        def maxValue(state, alpha, beta, depth):
+        def minValue(state, alpha, beta, depth):
             val = -MaxUtility
             for successor in state.getSuccessors():
                 val = max(val, alphaBetaSearch(successor, alpha, beta, depth))
@@ -123,7 +128,7 @@ def iterativeDeepeningAlphaBeta(state, evaluationFunc):
                 alpha = max(alpha, val)
             return val
 
-        def minValue(state, alpha, beta, depth):
+        def maxValue(state, alpha, beta, depth):
             val = MaxUtility
             for successor in state.getSuccessors():
                 val = min(val, alphaBetaSearch(successor, alpha, beta, depth - 1))
@@ -144,22 +149,8 @@ def iterativeDeepeningAlphaBeta(state, evaluationFunc):
             score = alphaBetaSearch(successor, -MaxUtility, MaxUtility, depth)
             if score > val:
                 val, bestMove = score, successor
+
     return bestMove
-
-def makeMove(move, board, isBlack):
-    firstStep = move[0]
-    board[firstStep[0]][firstStep[1]] = '_'
-
-    secondStep = move[1]
-
-    result = deepcopy(board)
-
-    if isBlack:
-        result[secondStep[0]][secondStep[1]] = 'b'
-    else:
-        result[secondStep[0]][secondStep[1]] = 'w'
-
-    return result
 
 def generateRandomMove(zboard, blackToMove):
     mboard = deepcopy(zboard)
@@ -187,7 +178,8 @@ def generateRandomMove(zboard, blackToMove):
         jumpEnd = True
         for step in getSteps(board[i][j]):
             x, y = i + step[0], j + step[1]
-            if x >= 0 and x < 8 and y >= 0 and y < 8 and board[x][y] != '_' and board[i][j].lower() != board[x][y].lower():
+            if x >= 0 and x < 8 and y >= 0 and y < 8 and board[x][y] != '_' and board[i][j].lower() != board[x][
+                y].lower():
                 xp, yp = x + step[0], y + step[1]
                 if xp >= 0 and xp < 8 and yp >= 0 and yp < 8 and board[xp][yp] == '_':
                     board[xp][yp], save = board[i][j], board[x][y]
@@ -210,15 +202,15 @@ def generateRandomMove(zboard, blackToMove):
 
     # generate jumps
     for i in xrange(8):
-       for j in xrange(8):
+        for j in xrange(8):
             if mboard[i][j].lower() == player:
-               generateJumps(mboard, i, j, [(i, j)], successors)
+                generateJumps(mboard, i, j, [(i, j)], successors)
     if len(successors) > 0:
         movesNo = len(successors)
         rand = randint(0, movesNo - 1)
         return successors[rand]
 
-     # generate moves
+        # generate moves
     for i in xrange(8):
         for j in xrange(8):
             if mboard[i][j].lower() == player:
@@ -226,17 +218,16 @@ def generateRandomMove(zboard, blackToMove):
 
     movesNo = len(successors)
 
-
     if movesNo > 1:
-        rand = randint(0, movesNo -1)
+        rand = randint(0, movesNo - 1)
     else:
         return None
 
     return successors[rand]
 
-
-def translatePieces (board):
-    for i in range(0 , len(board)):
+def translatePieces(board):
+    board = list(itertools.chain(*board))
+    for i in range(0, len(board)):
         if board[i] == 'b':
             board[i] = 1
         if board[i] == 'w':
@@ -250,8 +241,94 @@ def translatePieces (board):
     return board
 
 
-if __name__ == '__main__':
+def translatePiecesBack(board):
+    finalBoard = []
+    for i in range(0, len(board)):
+        temp = []
+        if board[i] == 1:
+            board[i] = 'b'
+        if board[i] == 8:
+            board[i] = 'w'
+        if board[i] == 5:
+            board[i] = 'B'
+        if board[i] == 12:
+            board[i] = 'W'
+        if board[i] == 0:
+            board[i] = '_'
+    finalBoard = [board[x:x + 8] for x in range(0, len(board), 8)]
 
+    return finalBoard
+
+
+def generateRandomPositions():
+    state = CheckersState(checkers, IsPlayerBlack, [])
+    move = iterativeDeepeningAlphaBeta(state, piecesCount)
+    print len(move) - 1
+    for step in move:
+        print step[0], step[1]
+
+    player = True;
+
+    succe = deepcopy(checkers)
+
+    resultlist = []
+
+    for j in range(1, 500):
+        print j
+        nextmove = CheckersState(succe, True, [])
+        for i in range(1, 35):
+            print i
+            oneMoveList = []
+
+            nextmove = generateRandomMove(nextmove.grid, player)
+            player = not player
+            bestmove = iterativeDeepeningAlphaBeta(nextmove, piecesCount)
+            randomMove = generateRandomMove(nextmove.grid, player)
+
+            if nextmove is None or bestmove is None or randomMove is None:
+                break
+
+            nextmoveFlat = list(itertools.chain(*nextmove.grid))
+            bestmoveFlat = list(itertools.chain(*bestmove.grid))
+            randomMoveFlat = list(itertools.chain(*randomMove.grid))
+
+            oneMoveList.append(nextmoveFlat)
+            oneMoveList.append(bestmoveFlat)
+            oneMoveList.append(randomMoveFlat)
+
+            resultlist.append(oneMoveList)
+
+    pickle.dump(resultlist, open("train.pickle", "wb"))
+
+def neuralValueFunction(state):
+    black, white = 0,0
+    funcInput = [translatePieces(state.grid)]
+    res = func(funcInput)
+    return res[-1]
+
+def neuralValueFunction2(state):
+    black, white = 0,0
+    funcInput = [translatePieces(state.grid)]
+    res = func2(funcInput)
+    return res[-1]
+
+def calcualtePieces(board):
+    zboard = deepcopy(board)
+    zboard = list(itertools.chain(*zboard))
+
+    white = 0
+    black = 0
+
+    for i in range(0, len(zboard)):
+        if zboard[i].lower() == 'w':
+            white += 1
+        if zboard[i].lower() == 'b':
+            black += 1
+
+    return  white, black
+
+
+if __name__ == '__main__':
     checkers = [['b', '_', 'b', '_', 'b', '_', 'b', '_'],
                 ['_', 'b', '_', 'b', '_', 'b', '_', 'b'],
                 ['b', '_', 'b', '_', 'b', '_', 'b', '_'],
@@ -265,120 +342,43 @@ if __name__ == '__main__':
     player.append('b')
     IsPlayerBlack = player[0] == 'b'
 
-    # state = CheckersState(checkers, IsPlayerBlack, [])
-    # move = iterativeDeepeningAlphaBeta(state, piecesCount)
-    # print len(move) - 1
-    # for step in move:
-    #     print step[0], step[1]
-    #
-    # z = makeMove(move, checkers, True)
-
-    # g = CheckersState(checkers, IsPlayerBlack, [move])
-
-
-    #     rand = generateRandomMove(checkers, True)
-
-    # player = True;
-    #
-    # succe = deepcopy(checkers)
-    #
-    # resultlist = []
-    #
-    # nextmove = CheckersState(succe, True, [])
-
-
-    # for j in range (1, 500) :
-    #     print j
-    #     nextmove = CheckersState(succe, True, [])
-    #     for i in range(1, 35):
-    #         print i
-    #         oneMoveList = []
-    #
-    #         nextmove = generateRandomMove(nextmove.grid, player)
-    #         player = not player
-    #         bestmove = iterativeDeepeningAlphaBeta(nextmove, piecesCount)
-    #         randomMove = generateRandomMove(nextmove.grid, player)
-    #
-    #
-    #         if nextmove is None or bestmove is None or randomMove is None:
-    #             break
-    #
-    #         nextmoveFlat = list(itertools.chain(*nextmove.grid))
-    #         bestmoveFlat = list(itertools.chain(*bestmove.grid))
-    #         randomMoveFlat = list(itertools.chain(*randomMove.grid))
-    #
-    #
-    #         oneMoveList.append(nextmoveFlat)
-    #         oneMoveList.append(bestmoveFlat)
-    #         oneMoveList.append(randomMoveFlat)
-    #
-    #         resultlist.append(oneMoveList)
-
-
-    # pickle.dump(resultlist, open("train.pickle", "wb"))
-
     # rs = pickle.load(open("train.pickle", "rb"))
-
 
     # translted = pickle.load(open("translated.pickle", "rb"))
 
-    checkers = [1, 0, 1, 0, 1, 0, 1, 0,
-                0, 1, 0, 1, 0, 1, 0, 1,
-                1, 0, 1, 0, 1, 0, 1, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 8, 0, 8, 0, 8, 0, 8,
-                8, 0, 8, 0, 8, 0, 8, 0,
-                0, 8, 0, 8, 0, 8, 0, 8]
+    checkersz = [1, 0, 1, 0, 1, 0, 1, 0,
+                 0, 1, 0, 1, 0, 1, 0, 1,
+                 1, 0, 1, 0, 1, 0, 1, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 8, 0, 8, 0, 8, 0, 8,
+                 8, 0, 8, 0, 8, 0, 8, 0,
+                 0, 8, 0, 8, 0, 8, 0, 8]
 
-    checkers2 = [1, 0, 1, 0, 1, 0, 1, 0,
-                0, 1, 0, 1, 0, 1, 0, 1,
-                1, 0, 1, 0, 1, 0, 1, 0,
-                0, 0, 0, 8, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 8, 0, 0, 0, 8, 0, 8,
-                8, 0, 8, 0, 8, 0, 8, 0,
-                0, 8, 0, 8, 0, 8, 0, 8]
+    # Ws, bs = pickle.load(open("zmodel.pickle"))
+    # func = load.get_model_from_pickle("zmodel.pickle")
 
-    checkers3 = [1, 0, 1, 0, 1, 0, 1, 0,
-                0, 1, 0, 1, 0, 1, 0, 1,
-                1, 0, 0, 0, 1, 0, 1, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 1, 0, 0, 0,
-                0, 8, 0, 0, 0, 0, 0, 8,
-                8, 0, 8, 0, 8, 0, 8, 0,
-                0, 8, 0, 8, 0, 8, 0, 8]
+    player = IsPlayerBlack;
 
-    checkers4 = [1, 0, 1, 0, 1, 0, 1, 0,
-                0, 1, 0, 1, 0, 1, 0, 1,
-                1, 0, 0, 0, 1, 0, 1, 0,
-                0, 0, 0, 8, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 8, 0, 0, 0, 0, 0, 8,
-                8, 0, 8, 0, 8, 0, 8, 0,
-                0, 8, 0, 8, 0, 8, 0, 8]
+    state = CheckersState(checkers, IsPlayerBlack, [])
 
-    checkers5 = [1, 0, 1, 0, 1, 0, 1, 0,
-                0, 1, 0, 1, 0, 1, 0, 1,
-                1, 0, 0, 0, 1, 0, 1, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 8, 0, 0, 0, 8, 0, 8,
-                8, 0, 8, 0, 8, 0, 8, 0,
-                0, 8, 0, 8, 0, 8, 0, 8]
+    move = iterativeDeepeningAlphaBeta(state, neuralValueFunction)
 
-    checkersList = []
-    checkersList.append(checkers)
-    checkersList.append(checkers2)
-    checkersList.append(checkers3)
-    checkersList.append(checkers4)
-    checkersList.append(checkers5)
+    for i in range(1,80):
+        player = not player
 
-    Ws, bs = pickle.load(open("zmodel.pickle"))
-    func = load.get_model_from_pickle("zmodel.pickle")
+        if (player):
+            print i
+            print "player move"
+            move = iterativeDeepeningAlphaBeta(move, neuralValueFunction2)
+            print move.blackToMove
+        else:
+            move = iterativeDeepeningAlphaBeta(move, neuralValueFunction)
+            # move = generateRandomMove(move.grid, player)
+            print move.blackToMove
 
-    print func(checkersList)
+        print calcualtePieces(move.grid)
+        for row in move.grid:
+            print row
 
-
-    #
-    # print len(succe.grid)
+        print "\n"

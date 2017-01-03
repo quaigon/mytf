@@ -193,12 +193,15 @@ def get_function(Ws_s, bs_s, dropout=False, update=False):
 
     momentum = floatX(0.9)
 
-    updatesInput = []
-    updatesInput.append(Ws_s[-1])
-    updatesInput.append(bs_s[-1])
+    # train only last layer (one neuron)
+    # updatesInput = []
+    # updatesInput.append(Ws_s[-1])
+    # updatesInput.append(bs_s[-1])
 
     if update:
-        updates = nesterov_updates(obj_f, updatesInput, learning_rate, momentum)
+
+        # updates = nesterov_updates(obj_f, updatesInput, learning_rate, momentum)
+        updates = nesterov_updates(obj_f, Ws_s + bs_s, learning_rate, momentum)
     else:
         updates = []
 
@@ -221,8 +224,10 @@ def train():
 
     n_in = 12 * 64
 
-    Ws, bs = pickle.load(open("model.pickle"))
-    Ws_s, bs_s = get_parameters(Ws=Ws, bs=bs)
+    # Ws, bs = pickle.load(open("model.pickle"))
+    # Ws_s, bs_s = get_parameters(Ws=Ws, bs=bs)
+
+    Ws_s, bs_s = get_parameters(n_in=n_in, n_hidden_units=[2048] * 3)
 
     minibatch_size = min(MINIBATCH_SIZE, Xc_train.shape[0])
 
@@ -245,7 +250,7 @@ def train():
         zs = [loss, loss_a, loss_b, loss_c, reg]
         print 'iteration %6d learning rate %12.9f: %s' % (i, learning_rate, '\t'.join(['%12.9f' % z for z in zs]))
 
-        if i % 200 == 0:
+        if i % 50 == 0:
             test_loss, test_reg, _, _, _ = test(Xc_test, Xr_test, Xp_test, learning_rate)
             print 'test loss %12.9f' % test_loss
 
@@ -254,7 +259,7 @@ def train():
                 best_test_loss = test_loss
 
                 print 'dumping pickled model'
-                f = open('zmodel.pickle', 'w')
+                f = open('notransfer.pickle', 'w')
                 def values(zs):
                     return [z.get_value(borrow=True) for z in zs]
                 pickle.dump((values(Ws_s), values(bs_s)), f)
