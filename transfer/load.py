@@ -14,9 +14,9 @@ def writeNdarrayToFile(L, filename):
 
 def get_model_from_pickle(fn):
     f = open(fn)
-    Ws, bs = pickle.load(open("zmodel.pickle"))
+    # Ws, bs = pickle.load(open("zmodel.pickle"))
 
-    Wz, bz = pickle.load(open("model.pickle"))
+    Ws, bs = pickle.load(f)
 
     Ws_s, bs_s = mytrain.get_parameters(Ws=Ws, bs=bs)
     x, p = mytrain.get_model(Ws_s, bs_s)

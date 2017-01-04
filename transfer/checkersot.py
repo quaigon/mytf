@@ -9,7 +9,7 @@ import load
 MaxUtility = 1e9
 IsPlayerBlack = True
 MaxAllowedTimeInSeconds = 60
-MaxDepth = 2
+MaxDepth = 4
 
 func=load.get_model_from_pickle("zmodel50.pickle")
 func2= load.get_model_from_pickle("notransfer.pickle")
@@ -113,12 +113,11 @@ def piecesCount(state):
                 white += 1.0
             elif cell == 'W':
                 white += 1.5
-    return white - black if IsPlayerBlack else black - white
+    return white - black if not IsPlayerBlack else black - white
 
 
 def iterativeDeepeningAlphaBeta(state, evaluationFunc):
     startTime = time()
-
     def alphaBetaSearch(state, alpha, beta, depth):
         def minValue(state, alpha, beta, depth):
             val = -MaxUtility
@@ -149,7 +148,7 @@ def iterativeDeepeningAlphaBeta(state, evaluationFunc):
             score = alphaBetaSearch(successor, -MaxUtility, MaxUtility, depth)
             if score > val:
                 val, bestMove = score, successor
-
+    print val
     return bestMove
 
 def generateRandomMove(zboard, blackToMove):
@@ -339,7 +338,7 @@ if __name__ == '__main__':
                 ['_', 'w', '_', 'w', '_', 'w', '_', 'w']]
 
     player = []
-    player.append('b')
+    player.append('w')
     IsPlayerBlack = player[0] == 'b'
 
     # rs = pickle.load(open("train.pickle", "rb"))
@@ -362,23 +361,40 @@ if __name__ == '__main__':
 
     state = CheckersState(checkers, IsPlayerBlack, [])
 
-    move = iterativeDeepeningAlphaBeta(state, neuralValueFunction)
+    # f = open('randomresultsblack2.txt', 'w')
+    # for g in range (1, 50):
 
-    for i in range(1,80):
+    move = iterativeDeepeningAlphaBeta(state, neuralValueFunction)
+    # move = generateRandomMove(state.grid, player)
+    lmove = move
+    print calcualtePieces(move.grid)
+    for row in move.grid:
+        print row
+
+    for i in range(1,100):
         player = not player
 
         if (player):
             print i
-            print "player move"
+            print "black move"
             move = iterativeDeepeningAlphaBeta(move, neuralValueFunction2)
-            print move.blackToMove
+            print "pieces made move"
         else:
+            print "white move move"
             move = iterativeDeepeningAlphaBeta(move, neuralValueFunction)
             # move = generateRandomMove(move.grid, player)
-            print move.blackToMove
+            print "neural made move"
 
-        print calcualtePieces(move.grid)
-        for row in move.grid:
-            print row
+        lwhite, lblack = 0, 0
+        try:
+            lwhite, lblack =  calcualtePieces(move.grid)
+            print lwhite, lblack
+            for row in move.grid:
+                print row
 
-        print "\n"
+            print "\n"
+
+            lmove = move
+        except Exception as ext:
+            lwhite, lblack = calcualtePieces(lmove.grid)
+            break
